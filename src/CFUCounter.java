@@ -1,5 +1,7 @@
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -12,10 +14,10 @@ public class CFUCounter {
         System.out.println("CFU Counter");
         System.out.println("===========");
 
-        var scanner = new Scanner(System.in);
-        var userInput = "";
+        Scanner scanner = new Scanner(System.in);
+        String userInput = "";
 
-        var cfuCounter = new CFUCounter();
+        CFUCounter cfuCounter = new CFUCounter();
         do {
             cfuCounter.getAndCalculateOneRow();
 
@@ -88,7 +90,7 @@ public class CFUCounter {
         }
         double averageColonies = (double) sumColonies / numReplicates;
 
-        var colonySquares = new double[numReplicates];
+        double[] colonySquares = new double[numReplicates];
         for (int i = 0; i < coloniesPerReplicate.length; ++i) {
             colonySquares[i] = Math.pow(coloniesPerReplicate[i] - averageColonies, 2.0);
         }
@@ -102,7 +104,7 @@ public class CFUCounter {
         // 4. calculate CFU/mL and std dev of CFU/mL
         final int microliterSpots = 5; // NOTE: assumes 5uL spots
 
-        var cfuAverageAndStdDev = new CFUAverageAndStdDev();
+        CFUAverageAndStdDev cfuAverageAndStdDev = new CFUAverageAndStdDev();
         cfuAverageAndStdDev.averageColoniesPerMill = (averageColonies      / microliterSpots) * 1000.0 * Math.pow(10., dilutionFactor);
         cfuAverageAndStdDev.stdDevColoniesPerMill  = (coloniesSampleStdDev / microliterSpots) * 1000.0 * Math.pow(10., dilutionFactor);
         cfuAverageAndStdDevs.add(cfuAverageAndStdDev);
@@ -115,11 +117,11 @@ public class CFUCounter {
         fileName = fileName.trim() + ".csv";
         System.out.println();
 
-        var filePath = Paths.get("./", fileName);
+        Path filePath = Paths.get("./", fileName);
 
         // if this is the first time we're writing to this file, we need to output a row with column headers
-        var headers = "Sample,CFU/mL,STDDEV\n";
-        var stringBuilder = new StringBuilder();
+        String headers = "Sample,CFU/mL,STDDEV\n";
+        StringBuilder stringBuilder = new StringBuilder();
         if (!Files.exists(filePath)) {
             stringBuilder.append(headers);
         }
@@ -127,7 +129,7 @@ public class CFUCounter {
         // print out values for this row to both the console and a file
         for (int i = 0; i < cfuAverageAndStdDevs.size(); ++i) {
             int row = (i+1);
-            var cfuAverageAndStdDev = cfuAverageAndStdDevs.get(i);
+            CFUAverageAndStdDev cfuAverageAndStdDev = cfuAverageAndStdDevs.get(i);
             stringBuilder.append(row).append(",")
                          .append(String.format("%.4e", cfuAverageAndStdDev.averageColoniesPerMill)).append(",")
                          .append(String.format("%.4e", cfuAverageAndStdDev.stdDevColoniesPerMill)) .append("\n");
@@ -140,7 +142,7 @@ public class CFUCounter {
 
         // open a file for writing, creating the file if it doesn't already exist, appending to the file if it does exist
         try {
-            Files.writeString(filePath, stringBuilder.toString(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+            Files.write(filePath, stringBuilder.toString().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             System.err.printf("Failed to write cfu count csv '%s'\n%s", filePath.toString(), e);
         }
